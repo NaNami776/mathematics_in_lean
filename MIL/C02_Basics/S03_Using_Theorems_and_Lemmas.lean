@@ -126,6 +126,20 @@ example : 2 * a * b ≤ a ^ 2 + b ^ 2 := by
     _ ≥ 0 := by apply pow_two_nonneg
   linarith
 
+theorem fact1 : a * b * 2 ≤ a ^ 2 + b ^ 2 := by
+  have h : 0 ≤ a ^ 2 - 2 * a * b + b ^ 2
+  calc
+    a ^ 2 - 2 * a * b + b ^ 2 = (a - b) ^ 2 := by ring
+    _ ≥ 0 := by apply pow_two_nonneg
+  linarith
+
+theorem fact2 : -(a * b) * 2 ≤ a ^ 2 + b ^ 2 := by
+  have h : 0 ≤ a ^ 2 + 2 * a * b + b ^ 2
+  calc
+    a ^ 2 + 2 * a * b + b ^ 2 = (a + b) ^ 2 := by ring
+    _ ≥ 0 := by apply pow_two_nonneg
+  linarith
+
 example : |a * b| ≤ (a ^ 2 + b ^ 2) / 2 := by
   have h : (0 : ℝ) < 2 := by norm_num
   apply abs_le'.mpr
@@ -136,4 +150,3 @@ example : |a * b| ≤ (a ^ 2 + b ^ 2) / 2 := by
   apply fact2
 
 #check abs_le'.mpr
-

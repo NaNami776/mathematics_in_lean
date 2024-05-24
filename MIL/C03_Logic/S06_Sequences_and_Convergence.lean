@@ -26,7 +26,7 @@ theorem convergesTo_const (a : ℝ) : ConvergesTo (fun x : ℕ ↦ a) a := by
   rw [sub_self, abs_zero]
   apply εpos
 
-heorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
+theorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
       (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
     ConvergesTo (fun n ↦ s n + t n) (a + b) := by
   intro ε εpos
@@ -148,4 +148,3 @@ def ConvergesTo' (s : α → ℝ) (a : ℝ) :=
   ∀ ε > 0, ∃ N, ∀ n ≥ N, |s n - a| < ε
 
 end
-

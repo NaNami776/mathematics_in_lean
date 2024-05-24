@@ -1,57 +1,31 @@
-import Mathlib.Data.Nat.Basic
-import Mathlib.Data.Nat.Parity
 import MIL.Common
+import Mathlib.Data.Real.Basic
+example (a b c : ℝ) : c * b * a = b * (a * c) := by
+  rw [mul_comm c b]
+  rw [mul_assoc b c a]
+  rw [mul_comm c a]
 
-open Nat
+example (a b c : ℝ) : a * (b * c) = b * (a * c) := by
+  rw [← mul_assoc a b c]
+  rw [mul_comm a b]
+  rw [mul_assoc b a c]
 
--- These are pieces of data.
-#check 2 + 2
+example (a b c : ℝ) : a * (b * c) = b * (c * a) := by
+  rw [mul_comm]
+  rw [mul_assoc]
 
-def f (x : ℕ) :=
-  x + 3
+example (a b c : ℝ) : a * (b * c) = b * (a * c) := by
+  rw [← mul_assoc]
+  rw [mul_comm a]
+  rw [mul_assoc]
 
-#check f
+example (a b c d e f : ℝ) (h : b * c = e * f) : a * b * c * d = a * e * f * d := by
+  rw [mul_assoc a]
+  rw [h]
+  rw [← mul_assoc]
 
--- These are propositions, of type `Prop`.
-#check 2 + 2 = 4
-
-def FermatLastTheorem :=
-  ∀ x y z n : ℕ, n > 2 ∧ x * y * z ≠ 0 → x ^ n + y ^ n ≠ z ^ n
-
-#check FermatLastTheorem
-
--- These are proofs of propositions.
-theorem easy : 2 + 2 = 4 :=
-  rfl
-
-#check easy
-
-theorem hard : FermatLastTheorem :=
-  sorry
-
-#check hard
-
--- Here are some proofs.
-example : ∀ m n : Nat, Even n → Even (m * n) := fun m n ⟨k, (hk : n = k + k)⟩ ↦
-  have hmn : m * n = m * k + m * k := by rw [hk, mul_add]
-  show ∃ l, m * n = l + l from ⟨_, hmn⟩
-
-example : ∀ m n : Nat, Even n → Even (m * n) :=
-fun m n ⟨k, hk⟩ ↦ ⟨m * k, by rw [hk, mul_add]⟩
-
-example : ∀ m n : Nat, Even n → Even (m * n) := by
-  -- Say m and n are natural numbers, and assume n=2*k.
-  rintro m n ⟨k, hk⟩
-  -- We need to prove m*n is twice a natural number. Let's show it's twice m*k.
-  use m * k
-  -- Substitute for n,
-  rw [hk]
-  -- and now it's obvious.
-  ring
-
-example : ∀ m n : Nat, Even n → Even (m * n) := by
-  rintro m n ⟨k, hk⟩; use m * k; rw [hk]; ring
-
-example : ∀ m n : Nat, Even n → Even (m * n) := by
-  intros; simp [*, parity_simps]
-
+example (a b c d : ℝ) (hyp : c = b * a - d) (hyp' : d = a * b) : c = 0 := by
+  rw [hyp]
+  rw [hyp']
+  rw [mul_comm]
+  rw [sub_self]

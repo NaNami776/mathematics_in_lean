@@ -193,7 +193,8 @@ example (c : ℝ) : Injective fun x ↦ x + c := by
   exact (add_left_inj c).mp h'
 
 example {c : ℝ} (h : c ≠ 0) : Injective fun x ↦ c * x := by
-  sorry
+  intro x₁ x₂ h'
+  apply (mul_right_inj' h).mp h'
 
 variable {α : Type*} {β : Type*} {γ : Type*}
 variable {g : β → γ} {f : α → β}
