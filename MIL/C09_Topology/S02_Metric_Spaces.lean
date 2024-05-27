@@ -165,43 +165,97 @@ open Metric
 example [CompleteSpace X] (f : ℕ → Set X) (ho : ∀ n, IsOpen (f n)) (hd : ∀ n, Dense (f n)) :
     Dense (⋂ n, f n) := by
   let B : ℕ → ℝ := fun n ↦ (1 / 2) ^ n
-  have Bpos : ∀ n, 0 < B n
-  sorry
+  have Bpos : ∀ n, 0 < B n := fun n ↦ pow_pos sorry n
   /- Translate the density assumption into two functions `center` and `radius` associating
     to any n, x, δ, δpos a center and a positive radius such that
     `closedBall center radius` is included both in `f n` and in `closedBall x δ`.
     We can also require `radius ≤ (1/2)^(n+1)`, to ensure we get a Cauchy sequence later. -/
   have :
     ∀ (n : ℕ) (x : X),
-      ∀ δ > 0, ∃ y : X, ∃ r > 0, r ≤ B (n + 1) ∧ closedBall y r ⊆ closedBall x δ ∩ f n :=
-    by sorry
+      ∀ δ > 0, ∃ y : X, ∃ r > 0, r ≤ B (n + 1) ∧ closedBall y r ⊆ closedBall x δ ∩ f n := by
+    intro n x δ δpos
+    have : x ∈ closure (f n) := hd n x
+    rcases Metric.mem_closure_iff.1 this (δ / 2) (half_pos δpos) with ⟨y, ys, xy⟩
+    rw [dist_comm] at xy
+    obtain ⟨r, rpos, hr⟩ : ∃ r > 0, closedBall y r ⊆ f n :=
+      nhds_basis_closedBall.mem_iff.1 (isOpen_iff_mem_nhds.1 (ho n) y ys)
+    refine' ⟨y, min (min (δ / 2) r) (B (n + 1)), _, _, fun z hz ↦ ⟨_, _⟩⟩
+    show 0 < min (min (δ / 2) r) (B (n + 1))
+    exact lt_min (lt_min (half_pos δpos) rpos) (Bpos (n + 1))
+    show min (min (δ / 2) r) (B (n + 1)) ≤ B (n + 1)
+    exact min_le_right _ _
+    show z ∈ closedBall x δ
+    exact
+      calc
+        dist z x ≤ dist z y + dist y x := dist_triangle _ _ _
+        _ ≤ min (min (δ / 2) r) (B (n + 1)) + δ / 2 := (add_le_add hz xy.le)
+        _ ≤ δ / 2 + δ / 2 := (add_le_add_right ((min_le_left _ _).trans (min_le_left _ _)) _)
+        _ = δ := add_halves δ
+
+    show z ∈ f n
+    exact
+      hr
+        (calc
+          dist z y ≤ min (min (δ / 2) r) (B (n + 1)) := hz
+          _ ≤ r := (min_le_left _ _).trans (min_le_right _ _)
+          )
   choose! center radius Hpos HB Hball using this
-  intro x
-  rw [mem_closure_iff_nhds_basis nhds_basis_closedBall]
-  intro ε εpos
-  /- `ε` is positive. We have to find a point in the ball of radius `ε` around `x`
-    belonging to all `f n`. For this, we construct inductively a sequence
-    `F n = (c n, r n)` such that the closed ball `closedBall (c n) (r n)` is included
-    in the previous ball and in `f n`, and such that `r n` is small enough to ensure
-    that `c n` is a Cauchy sequence. Then `c n` converges to a limit which belongs
-    to all the `f n`. -/
+  refine' fun x ↦ (mem_closure_iff_nhds_basis nhds_basis_closedBall).2 fun ε εpos ↦ _
+  /- `ε` is positive. We have to find a point in the ball of radius `ε` around `x` belonging to all
+    `f n`. For this, we construct inductively a sequence `F n = (c n, r n)` such that the closed ball
+    `closedBall (c n) (r n)` is included in the previous ball and in `f n`, and such that
+    `r n` is small enough to ensure that `c n` is a Cauchy sequence. Then `c n` converges to a
+    limit which belongs to all the `f n`. -/
   let F : ℕ → X × ℝ := fun n ↦
-    Nat.recOn n (Prod.mk x (min ε (B 0)))
-      fun n p ↦ Prod.mk (center n p.1 p.2) (radius n p.1 p.2)
+    Nat.recOn n (Prod.mk x (min ε (B 0))) fun n p ↦ Prod.mk (center n p.1 p.2) (radius n p.1 p.2)
   let c : ℕ → X := fun n ↦ (F n).1
   let r : ℕ → ℝ := fun n ↦ (F n).2
-  have rpos : ∀ n, 0 < r n := by sorry
-  have rB : ∀ n, r n ≤ B n := by sorry
-  have incl : ∀ n, closedBall (c (n + 1)) (r (n + 1)) ⊆ closedBall (c n) (r n) ∩ f n := by
-    sorry
-  have cdist : ∀ n, dist (c n) (c (n + 1)) ≤ B n := by sorry
+  have rpos : ∀ n, 0 < r n := by
+    intro n
+    induction' n with n hn
+    exact lt_min εpos (Bpos 0)
+    exact Hpos n (c n) (r n) hn
+  have rB : ∀ n, r n ≤ B n := by
+    intro n
+    induction' n with n hn
+    exact min_le_right _ _
+    exact HB n (c n) (r n) (rpos n)
+  have incl : ∀ n, closedBall (c (n + 1)) (r (n + 1)) ⊆ closedBall (c n) (r n) ∩ f n := fun n ↦
+    Hball n (c n) (r n) (rpos n)
+  have cdist : ∀ n, dist (c n) (c (n + 1)) ≤ B n := by
+    intro n
+    rw [dist_comm]
+    have A : c (n + 1) ∈ closedBall (c (n + 1)) (r (n + 1)) :=
+      mem_closedBall_self (rpos <| n + 1).le
+    have I :=
+      calc
+        closedBall (c (n + 1)) (r (n + 1)) ⊆ closedBall (c n) (r n) :=
+          (incl n).trans (inter_subset_left _ _)
+        _ ⊆ closedBall (c n) (B n) := closedBall_subset_closedBall (rB n)
+
+    exact I A
   have : CauchySeq c := cauchySeq_of_le_geometric_two' cdist
   -- as the sequence `c n` is Cauchy in a complete space, it converges to a limit `y`.
   rcases cauchySeq_tendsto_of_complete this with ⟨y, ylim⟩
   -- this point `y` will be the desired point. We will check that it belongs to all
   -- `f n` and to `ball x ε`.
   use y
-  have I : ∀ n, ∀ m ≥ n, closedBall (c m) (r m) ⊆ closedBall (c n) (r n) := by sorry
-  have yball : ∀ n, y ∈ closedBall (c n) (r n) := by sorry
-  sorry
-
+  have I : ∀ n, ∀ m ≥ n, closedBall (c m) (r m) ⊆ closedBall (c n) (r n) := by
+    intro n
+    refine' Nat.le_induction _ fun m hnm h ↦ _
+    · exact Subset.rfl
+    · exact (incl m).trans ((Set.inter_subset_left _ _).trans h)
+  have yball : ∀ n, y ∈ closedBall (c n) (r n) := by
+    intro n
+    refine' isClosed_ball.mem_of_tendsto ylim _
+    refine' (Filter.eventually_ge_atTop n).mono fun m hm ↦ _
+    exact I n m hm (mem_closedBall_self (rpos _).le)
+  constructor
+  · suffices ∀ n, y ∈ f n by rwa [Set.mem_iInter]
+    intro n
+    have : closedBall (c (n + 1)) (r (n + 1)) ⊆ f n :=
+      Subset.trans (incl n) (inter_subset_right _ _)
+    exact this (yball (n + 1))
+  calc
+    dist y x ≤ r 0 := yball 0
+    _ ≤ ε := min_le_left _ _

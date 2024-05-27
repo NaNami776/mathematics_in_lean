@@ -120,8 +120,12 @@ instance instCommRing : CommRing gaussInt where
   mul_comm := by
     intros
     ext <;> simp <;> ring
-  zero_mul := sorry
-  mul_zero := sorry
+  zero_mul := by
+    intros
+    ext <;> simp
+  mul_zero := by
+    intros
+    ext <;> simp
 
 @[simp]
 theorem sub_re (x y : gaussInt) : (x - y).re = x.re - y.re :=
@@ -173,9 +177,23 @@ theorem mod'_eq (a b : ℤ) : mod' a b = a - b * div' a b := by linarith [div'_a
 
 end Int
 
+private theorem aux {α : Type*} [LinearOrderedRing α] {x y : α} (h : x ^ 2 + y ^ 2 = 0) : x = 0 :=
+  haveI h' : x ^ 2 = 0 := by
+    apply le_antisymm _ (sq_nonneg x)
+    rw [← h]
+    apply le_add_of_nonneg_right (sq_nonneg y)
+  pow_eq_zero h'
+
 theorem sq_add_sq_eq_zero {α : Type*} [LinearOrderedRing α] (x y : α) :
     x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 := by
-  sorry
+  constructor
+  · intro h
+    constructor
+    · exact aux h
+    rw [add_comm] at h
+    exact aux h
+  rintro ⟨rfl, rfl⟩
+  norm_num
 namespace gaussInt
 
 def norm (x : gaussInt) :=
@@ -183,13 +201,21 @@ def norm (x : gaussInt) :=
 
 @[simp]
 theorem norm_nonneg (x : gaussInt) : 0 ≤ norm x := by
-  sorry
+  apply add_nonneg <;>
+  apply sq_nonneg
+
 theorem norm_eq_zero (x : gaussInt) : norm x = 0 ↔ x = 0 := by
-  sorry
+  rw [norm, sq_add_sq_eq_zero, gaussInt.ext_iff]
+  rfl
+
 theorem norm_pos (x : gaussInt) : 0 < norm x ↔ x ≠ 0 := by
-  sorry
+  rw [lt_iff_le_and_ne, ne_comm, Ne, norm_eq_zero]
+  simp [norm_nonneg]
+
 theorem norm_mul (x y : gaussInt) : norm (x * y) = norm x * norm y := by
-  sorry
+  simp [norm]
+  ring
+
 def conj (x : gaussInt) : gaussInt :=
   ⟨x.re, -x.im⟩
 
